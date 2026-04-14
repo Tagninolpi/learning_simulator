@@ -1,0 +1,64 @@
+/*
+Global styles and visual foundations of the project.
+This file defines:
+- the fonts used
+- the base styles (body, headings, buttons, inputs)
+- the common rules shared by all pages
+
+It does not describe specific UI components, but provides a coherent visual base used by component.css and by all HTML fragments.
+*/
+
+/* Import the fonts used throughout the project. The font was chosen with gamification and accessibility in mind. */
+@import url('https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&family=Audiowide&display=swap');
+
+body {
+  font-family: "Oxanium", Arial, sans-serif;
+  font-size: 19px;
+  line-height: 1.6;
+  background: #f6f2e9;
+}
+
+/* Heading styles */
+h1, h2, h3 {
+  font-family: "Audiowide", "Oxanium", Arial, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+}
+
+button {
+  font-family: "Oxanium", Arial, sans-serif;
+  font-weight: 600;
+  font-size: 16px;          
+  padding: 14px 26px;
+  min-height: 52px;
+  border: 2px solid #222;
+  background: #fff;
+  cursor: pointer;
+  transition: 0.15s;
+}
+
+/* Pressed visual effect when clicking a button */
+button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 0 #000;
+}
+
+/* Hover visual effect on a button */
+button:hover {
+  background: #222;
+  color: #fff;
+}
+
+/* Global styles for input fields */
+input, select {
+  font-family: inherit; /* Inherit the parent's font */
+  padding: 8px;
+  border: 2px solid #222;
+  background: white;
+}
+
+/* Utility class for simple content centering */
+.center {
+  text-align: center;
+  margin-top: 40px;
+}

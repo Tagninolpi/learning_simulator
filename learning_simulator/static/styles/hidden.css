@@ -1,0 +1,7 @@
+/* 
+Class dynamically applied by JavaScript (updateUI in main.js) used to hide an element when the administrator chooses not to transmit the data to the player 
+*/
+
+.hidden{
+	display: none; /* Completely removes the element from the display */
+}
