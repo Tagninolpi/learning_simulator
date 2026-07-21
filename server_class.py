@@ -12,10 +12,9 @@ class Server:
             self.connections.connected = client_id
             await self.connections.change_page(client_id, "word_selection")
             await asyncio.sleep(0.3)
-            # Build payload: list of { "japanese": "あう", "german": "treffen" }
             payload = [
                 {"japanese": jp, "german": de}
-                for jp, de in self.game.all_words.items()
+                for jp, de in self.game.all_words
             ]
             await self.connections.send_json(client_id, {
                 "type": "set_buttons",
@@ -23,8 +22,8 @@ class Server:
             })
 
     async def start_learning(self, client_id, selected_indices: list):
-        self.game.set_active_words(selected_indices)
-        self.connections.connected = None  # reset so the player can rejoin after the game
+        self.game.set_active_words_from_indices(selected_indices)
+        self.connections.connected = None
         await self.connections.change_page(client_id, "learning")
         await asyncio.sleep(0.3)
         await self._send_question(client_id)

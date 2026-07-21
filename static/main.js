@@ -23,13 +23,10 @@ ws.onmessage = (event) => {
       setButtons(payload);
       break;
     case "question":
-      renderQuestion(payload);
-      break;
-    case "question":
       if (document.getElementById("current-japanese")) {
-        renderQuestion(payload);
+          renderQuestion(payload);
       } else {
-        pendingQuestion = payload;
+          pendingQuestion = payload;
       }
       break;
 
@@ -167,60 +164,82 @@ document.addEventListener("click", (e) => {
   btn.style.background = value ? "white" : "black"; // Visual update of the button (user feedback)
   btn.style.color = value ? "black" : "white";
 });
-
-
-// --- Word Selection State ---
-let wordStates = [];   // [{ word: 'hello', selected: false }, ...]
+let wordStates = [];   // [{ japanese, german, selected }, ...]
 let currentPage = 0;
-const PAGE_SIZE = 5;  // 5 per page as requested
+const PAGE_SIZE = 25;
 
-function setButtons(words) {
-  // words = [{ japanese: "あう", german: "treffen" }, ...]
-  wordStates = words.map(word => ({ ...word, selected: false }));
-  currentPage = 0;
-  renderPage();
+function setButtons(data) {
+    wordStates = data.map(w => ({ japanese: w.japanese, german: w.german, selected: false }));
+    currentPage = 0;
+    renderPage();
 }
 
 function renderPage() {
-  const container = document.getElementById("word-buttons");
-  if (!container) return;
+    const container = document.getElementById("word-buttons");
+    if (!container) return;
 
-  const start = currentPage * PAGE_SIZE;
-  const slice = wordStates.slice(start, start + PAGE_SIZE);
+    const start = currentPage * PAGE_SIZE;
+    const slice = wordStates.slice(start, start + PAGE_SIZE);
+    const maxPage = Math.ceil(wordStates.length / PAGE_SIZE);
 
-  container.innerHTML = "";
-  slice.forEach((item, localIndex) => {
-    const globalIndex = start + localIndex;
-    const btn = document.createElement("button");
-    btn.innerHTML = `<span>${item.japanese}</span><br><small>${item.german}</small>`;
-    btn.dataset.index = globalIndex;
-    if (item.selected) btn.classList.add("selected");
-    btn.onclick = () => toggleWord(globalIndex, btn);
-    container.appendChild(btn);
-  });
+    // page indicator
+    const indicator = document.getElementById("page-indicator");
+    if (indicator) indicator.textContent = `page ${currentPage + 1} / ${maxPage}`;
+
+    // update select all button label
+    const selectAllBtn = document.querySelector("button[onclick='handleSelectAll()']");
+    if (selectAllBtn) {
+        const allSelected = slice.every(w => w.selected);
+        selectAllBtn.textContent = allSelected ? "deselect all" : "select all";
+    }
+
+    container.innerHTML = "";
+    slice.forEach((item, localIndex) => {
+        const globalIndex = start + localIndex;
+        const card = document.createElement("div");
+        card.className = "word-card" + (item.selected ? " selected" : "");
+        card.innerHTML = `<span class="jp">${item.japanese}</span><span class="de">${item.german}</span>`;
+        card.onclick = () => toggleWord(globalIndex, card);
+        container.appendChild(card);
+    });
 }
 
-// Toggles a word on/off — no server communication
-function toggleWord(globalIndex, btn) {
-  wordStates[globalIndex].selected = !wordStates[globalIndex].selected;
-  btn.classList.toggle("selected");
+function toggleWord(globalIndex, card) {
+    wordStates[globalIndex].selected = !wordStates[globalIndex].selected;
+    card.classList.toggle("selected");
+
+    // update select all button label after toggle
+    const start = currentPage * PAGE_SIZE;
+    const slice = wordStates.slice(start, start + PAGE_SIZE);
+    const selectAllBtn = document.querySelector("button[onclick='handleSelectAll()']");
+    if (selectAllBtn) {
+        const allSelected = slice.every(w => w.selected);
+        selectAllBtn.textContent = allSelected ? "deselect all" : "select all";
+    }
 }
 
-// Handles prev / next — just re-renders, no server communication
+function handleSelectAll() {
+    const start = currentPage * PAGE_SIZE;
+    const slice = wordStates.slice(start, start + PAGE_SIZE);
+    const allSelected = slice.every(w => w.selected);
+    slice.forEach((_, i) => {
+        wordStates[start + i].selected = !allSelected;
+    });
+    renderPage();
+}
+
 function handleNav(direction) {
-  const maxPage = Math.ceil(wordStates.length / PAGE_SIZE) - 1;
-  if (direction === 'next' && currentPage < maxPage) currentPage++;
-  if (direction === 'prev' && currentPage > 0) currentPage--;
-  renderPage();
+    const maxPage = Math.ceil(wordStates.length / PAGE_SIZE) - 1;
+    if (direction === 'next' && currentPage < maxPage) currentPage++;
+    if (direction === 'prev' && currentPage > 0) currentPage--;
+    renderPage();
 }
 
-// Sends the full state only when start is clicked
 function handleStart() {
-  const payload = wordStates.map(item => ({
-    word: item.word,
-    selected: item.selected
-  }));
-  button_click('word_selection', 'start', payload);
+    const selected = wordStates
+        .map((w, i) => w.selected ? i : null)
+        .filter(i => i !== null);
+    button_click('word_selection', 'start', selected);
 }
 
 function renderQuestion(data) {

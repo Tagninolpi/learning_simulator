@@ -20,11 +20,8 @@ class Observer:
 
             elif page_name == "word_selection":
                 if button == "start":
-                    selected = [
-                        i for i, item in enumerate(msg["message"])
-                        if item["selected"]
-                    ]
-                    await self.server.start_learning(client_id, selected)
+                    selected_indices = msg["message"]  # list of indices into all_words
+                    await self.server.start_learning(client_id, selected_indices)
                 else:
                     print(f"{button} is not valid")
             
