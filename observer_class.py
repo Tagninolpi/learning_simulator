@@ -1,32 +1,44 @@
 import asyncio
-# listen to the client actions(button presses) => tell the server what to do
+
 class Observer:
     def __init__(self, server):
-        self.server = server  #reference to the server
-        self.message_queue = server.message_queue  # list of the client messages(actions) (html=>main.js=>app.py=>here)
+        self.server = server
+        self.message_queue = server.message_queue
 
-    async def message_listener(self): # called on app launch (app.py)
+    async def message_listener(self):
         while True:
-            client_id, msg = await self.message_queue.get() 
+            client_id, msg = await self.message_queue.get()
             page_name = msg["page"]
             button = msg["button"]
 
-            # depending on the client action => tells the server what function to execute
             if page_name == "main_menu":
                 if button == "japanese":
                     await self.server.join_japanese(client_id)
+                elif button == "marines":
+                    await self.server.join_marines(client_id)
+                else:
+                    print(f"{button} is not valid")
+
+            elif page_name == "marines_menu":
+                if button in ("marines_image", "marines_word"):
+                    await self.server.start_marines(client_id, button)
                 else:
                     print(f"{button} is not valid")
 
             elif page_name == "word_selection":
                 if button == "start":
-                    selected_indices = msg["message"]  # list of indices into all_words
-                    await self.server.start_learning(client_id, selected_indices)
+                    await self.server.start_learning(client_id, msg["message"])
                 else:
                     print(f"{button} is not valid")
-            
+
             elif page_name == "learning":
                 if button == "answer":
                     await self.server.handle_answer(client_id, msg["message"])
+                else:
+                    print(f"{button} is not valid")
+
+            elif page_name == "stats":
+                if button == "back":
+                    await self.server.connections.change_page(client_id, "main_menu")
                 else:
                     print(f"{button} is not valid")

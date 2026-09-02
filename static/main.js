@@ -5,7 +5,7 @@ const wsHost = window.location.host; // Retrieves the current host (e.g., localh
 const app = document.getElementById("app"); // Retrieves the main container where HTML pages will be injected
 let ws = new WebSocket(`${wsProtocol}://${wsHost}/ws`); // Opens the WebSocket connection with the Python backend
 let pendingQuestion = null;
-
+let pendingStats = null;
 // This function is called for each message received from the server
 ws.onmessage = (event) => {
   const msg = JSON.parse(event.data);
@@ -23,10 +23,17 @@ ws.onmessage = (event) => {
       setButtons(payload);
       break;
     case "question":
-      if (document.getElementById("current-japanese")) {
-          renderQuestion(payload);
+      if (document.getElementById("prompt-area")) {
+        renderQuestion(payload);
       } else {
-          pendingQuestion = payload;
+        pendingQuestion = payload;
+      }
+      break;
+    case "show_stats":
+      if (document.getElementById("stat-total-time")) {
+        renderStats(payload);
+      } else {
+        pendingStats = payload;
       }
       break;
 
@@ -137,10 +144,15 @@ async function loadFragment(name) {
     if (!response.ok) throw new Error("Fragment introuvable");
     const html = await response.text();
     app.innerHTML = html;
+
     if (pendingQuestion) {
       renderQuestion(pendingQuestion);
       pendingQuestion = null;
-}
+    }
+    if (pendingStats) {
+      renderStats(pendingStats);
+      pendingStats = null;
+    }
   } catch (err) {
     app.innerHTML = `<p style="color:red;text-align:center;">Erreur de chargement : ${err.message}</p>`;
   }
@@ -175,35 +187,44 @@ function setButtons(data) {
 }
 
 function renderPage() {
-    const container = document.getElementById("word-buttons");
-    if (!container) return;
+  const container = document.getElementById("word-buttons");
+  if (!container) return;
 
-    const start = currentPage * PAGE_SIZE;
-    const slice = wordStates.slice(start, start + PAGE_SIZE);
-    const maxPage = Math.ceil(wordStates.length / PAGE_SIZE);
+  const start = currentPage * PAGE_SIZE;
+  const slice = wordStates.slice(start, start + PAGE_SIZE);
+  const maxPage = Math.ceil(wordStates.length / PAGE_SIZE);
 
-    // page indicator
-    const indicator = document.getElementById("page-indicator");
-    if (indicator) indicator.textContent = `page ${currentPage + 1} / ${maxPage}`;
-
-    // update select all button label
-    const selectAllBtn = document.querySelector("button[onclick='handleSelectAll()']");
-    if (selectAllBtn) {
-        const allSelected = slice.every(w => w.selected);
-        selectAllBtn.textContent = allSelected ? "deselect all" : "select all";
+  // page buttons instead of prev/next
+  const nav = document.getElementById("page-nav");
+  if (nav) {
+    nav.innerHTML = "";
+    for (let i = 0; i < maxPage; i++) {
+      const btn = document.createElement("button");
+      btn.textContent = i + 1;
+      if (i === currentPage) btn.classList.add("selected");
+      btn.onclick = () => { currentPage = i; renderPage(); };
+      nav.appendChild(btn);
     }
+  }
 
-    container.innerHTML = "";
-    slice.forEach((item, localIndex) => {
-        const globalIndex = start + localIndex;
-        const card = document.createElement("div");
-        card.className = "word-card" + (item.selected ? " selected" : "");
-        card.innerHTML = `<span class="jp">${item.japanese}</span><span class="de">${item.german}</span>`;
-        card.onclick = () => toggleWord(globalIndex, card);
-        container.appendChild(card);
-    });
+  // select all button
+  const selectAllBtn = document.querySelector("button[onclick='handleSelectAll()']");
+  if (selectAllBtn) {
+    const allSelected = slice.every(w => w.selected);
+    selectAllBtn.textContent = allSelected ? "deselect all" : "select all";
+  }
+
+  container.innerHTML = "";
+  slice.forEach((item, localIndex) => {
+    const globalIndex = start + localIndex;
+    const card = document.createElement("div");
+    card.className = "word-card" + (item.selected ? " selected" : "");
+    card.innerHTML = `<span class="jp">${item.japanese}</span><span class="de">${item.german}</span>`;
+    card.onclick = () => toggleWord(globalIndex, card);
+    container.appendChild(card);
+  });
 }
-
+S
 function toggleWord(globalIndex, card) {
     wordStates[globalIndex].selected = !wordStates[globalIndex].selected;
     card.classList.toggle("selected");
@@ -242,33 +263,96 @@ function handleStart() {
     button_click('word_selection', 'start', selected);
 }
 
-function renderQuestion(data) {
-  // top: japanese symbol
-  const jpEl = document.getElementById("current-japanese");
-  if (jpEl) jpEl.textContent = data.japanese;
 
-  // middle: 5 answer buttons
+// ── Question renderer (all modes) ─────────────────────────────────
+
+function renderQuestion(data) {
+  const prompt = document.getElementById("prompt-area");
   const container = document.getElementById("answer-buttons");
-  if (container) {
-    container.innerHTML = "";
+  if (!prompt || !container) return;
+
+  prompt.innerHTML = "";
+  container.innerHTML = "";
+
+  if (data.mode === "japanese") {
+    // prompt: japanese symbol
+    prompt.innerHTML = `<span style="font-size:3rem;">${data.japanese}</span>`;
+    // buttons: german words
     data.buttons.forEach(btn => {
       const el = document.createElement("button");
       el.textContent = btn.german;
-      el.onclick = () => {
-        button_click('learning', 'answer', btn.correct);
-      };
+      el.onclick = () => button_click('learning', 'answer', btn.correct);
+      container.appendChild(el);
+    });
+
+  } else if (data.mode === "marines_image") {
+    // prompt: the word to find
+    prompt.innerHTML = `<span style="font-size:2rem;">${data.word}</span>`;
+    // buttons: images
+    data.choices.forEach(choice => {
+      const el = document.createElement("img");
+      el.src = choice.path;
+      el.style.cssText = "width:120px;height:120px;object-fit:contain;cursor:pointer;border:2px solid transparent;border-radius:8px;";
+      el.onclick = () => button_click('learning', 'answer', choice.correct);
+      container.appendChild(el);
+    });
+
+  } else if (data.mode === "marines_word") {
+    // prompt: the image
+    prompt.innerHTML = `<img src="${data.image}" style="max-height:200px;object-fit:contain;">`;
+    // buttons: word names
+    data.buttons.forEach(btn => {
+      const el = document.createElement("button");
+      el.textContent = btn.name;
+      el.onclick = () => button_click('learning', 'answer', btn.correct);
       container.appendChild(el);
     });
   }
 
-  // bottom: last word result
-  if (data.last_word) {
-    const lastJp = document.getElementById("last-japanese");
-    const lastDe = document.getElementById("last-german");
-    if (lastJp) lastJp.textContent = data.last_word.japanese;
-    if (lastDe) {
-      lastDe.textContent = data.last_word.german;
-      lastDe.style.color = data.last_word.correct ? "green" : "red";
-    }
-  }
+  // bottom: last result
+  renderLastWord(data.last_word, data.mode);
 }
+
+function renderLastWord(last, mode) {
+  const label = document.getElementById("last-label");
+  const answer = document.getElementById("last-answer");
+  if (!last || !label || !answer) return;
+
+  if (mode === "japanese") {
+    label.textContent = last.japanese;
+    answer.textContent = last.german;
+  } else {
+    label.textContent = last.name;
+    answer.innerHTML = `<img src="${last.path}" style="height:50px;object-fit:contain;">`;
+  }
+  answer.style.color = last.correct ? "green" : "red";
+}
+
+// ── Stats renderer ────────────────────────────────────────────────
+
+
+
+function renderStats(data) {
+  const totalTime = document.getElementById("stat-total-time");
+  const accuracy = document.getElementById("stat-accuracy");
+  const fastest = document.getElementById("stat-fastest");
+  const slowest = document.getElementById("stat-slowest");
+  const rows = document.getElementById("stat-rows");
+
+  if (!totalTime) { pendingStats = data; return; }
+
+  totalTime.textContent = `${data.total_time}s`;
+  accuracy.textContent = `${data.accuracy}%`;
+  fastest.textContent = data.fastest ? `${data.fastest.word} (${data.fastest.time}s)` : "-";
+  slowest.textContent = data.slowest ? `${data.slowest.word} (${data.slowest.time}s)` : "-";
+
+  rows.innerHTML = "<strong>Word</strong><strong>Wrong</strong><strong>Time</strong>";
+  data.rows.forEach(r => {
+    rows.innerHTML += `<span>${r.word}</span><span style="color:${r.wrong > 0 ? 'red' : 'green'}">${r.wrong}</span><span>${r.time}s</span>`;
+  });
+}
+
+// add to ws.onmessage switch:
+// case "show_stats":
+//   renderStats(payload);
+//   break;

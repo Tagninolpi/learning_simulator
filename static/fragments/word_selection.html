@@ -1,21 +1,15 @@
 <div class="center">
-
   <div style="display:flex; justify-content:center; margin-bottom:20px;">
     <button onclick="handleStart()">start</button>
   </div>
 
   <div style="display:flex; justify-content:center; align-items:center; gap:16px; margin-bottom:10px;">
-    <span id="page-indicator" style="font-size:0.9rem; color:var(--color-text-secondary);"></span>
     <button onclick="handleSelectAll()">select all</button>
   </div>
-  <div style="display:flex; justify-content:center; gap:10px; margin-top:20px;">
-    <button onclick="handleNav('prev')">← prev</button>
-    <button onclick="handleNav('next')">next →</button>
+  <div id="page-nav" style="display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin-top:20px;">
   </div>
-
   <div id="word-buttons" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:8px; margin:10px 0;">
   </div>
 
   
-
 </div>
