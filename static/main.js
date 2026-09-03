@@ -286,24 +286,22 @@ function renderQuestion(data) {
     });
 
   } else if (data.mode === "marines_image") {
-    // prompt: the word to find
-    prompt.innerHTML = `<span style="font-size:2rem;">${data.word}</span>`;
-    // buttons: images
+    prompt.innerHTML = `<span style="font-size:2rem;">${data.word.replaceAll("_", " ")}</span>`;
     data.choices.forEach(choice => {
       const el = document.createElement("img");
       el.src = choice.path;
-      el.style.cssText = "width:120px;height:120px;object-fit:contain;cursor:pointer;border:2px solid transparent;border-radius:8px;";
+      // full width on mobile, capped on desktop
+      el.style.cssText = "width:100%;max-width:100%;object-fit:contain;cursor:pointer;border:2px solid transparent;border-radius:8px;display:block;margin-bottom:8px;";
       el.onclick = () => button_click('learning', 'answer', choice.correct);
       container.appendChild(el);
     });
 
   } else if (data.mode === "marines_word") {
-    // prompt: the image
-    prompt.innerHTML = `<img src="${data.image}" style="max-height:200px;object-fit:contain;">`;
-    // buttons: word names
+    prompt.innerHTML = `<img src="${data.image}" style="width:100%;max-width:100%;object-fit:contain;display:block;">`;
     data.buttons.forEach(btn => {
       const el = document.createElement("button");
-      el.textContent = btn.name;
+      el.textContent = btn.name.replaceAll("_", " ");
+      el.style.cssText = "white-space:normal;word-break:break-word;";
       el.onclick = () => button_click('learning', 'answer', btn.correct);
       container.appendChild(el);
     });
@@ -316,16 +314,31 @@ function renderQuestion(data) {
 function renderLastWord(last, mode) {
   const label = document.getElementById("last-label");
   const answer = document.getElementById("last-answer");
-  if (!last || !label || !answer) return;
+  if (!label || !answer) return;
+
+  if (!last) {
+    label.textContent = "";
+    answer.textContent = "";
+    return;
+  }
 
   if (mode === "japanese") {
     label.textContent = last.japanese;
     answer.textContent = last.german;
-  } else {
-    label.textContent = last.name;
-    answer.innerHTML = `<img src="${last.path}" style="height:50px;object-fit:contain;">`;
+    answer.style.color = last.correct ? "green" : "red";
+
+  } else if (mode === "marines_image") {
+    // showed the word, player picked an image — show the name as colored text
+    label.textContent = "";
+    answer.textContent = last.name.replaceAll("_", " ");
+    answer.style.color = last.correct ? "green" : "red";
+
+  } else if (mode === "marines_word") {
+    // showed the image, player picked a word — show the correct name as colored text
+    label.textContent = "";
+    answer.textContent = last.name.replaceAll("_", " ");
+    answer.style.color = last.correct ? "green" : "red";
   }
-  answer.style.color = last.correct ? "green" : "red";
 }
 
 // ── Stats renderer ────────────────────────────────────────────────
