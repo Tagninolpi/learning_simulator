@@ -20,7 +20,7 @@ class Observer:
                     print(f"{button} is not valid")
 
             elif page_name == "marines_menu":
-                if button in ("marines_image", "marines_word"):
+                if button in ("marines_image", "marines_word", "marines_odd", "marines_category"):
                     await self.server.start_marines(client_id, button)
                 else:
                     print(f"{button} is not valid")
@@ -42,3 +42,4 @@ class Observer:
                     await self.server.connections.change_page(client_id, "main_menu")
                 else:
                     print(f"{button} is not valid")
+            

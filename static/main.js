@@ -274,10 +274,11 @@ function renderQuestion(data) {
   prompt.innerHTML = "";
   container.innerHTML = "";
 
+  // image sizing: 20vw on desktop, 100% on mobile
+  const imgStyle = "width:min(20vw, 100%); object-fit:contain; cursor:pointer; border-radius:8px; display:block;";
+
   if (data.mode === "japanese") {
-    // prompt: japanese symbol
     prompt.innerHTML = `<span style="font-size:3rem;">${data.japanese}</span>`;
-    // buttons: german words
     data.buttons.forEach(btn => {
       const el = document.createElement("button");
       el.textContent = btn.german;
@@ -287,27 +288,57 @@ function renderQuestion(data) {
 
   } else if (data.mode === "marines_image") {
     prompt.innerHTML = `<span style="font-size:2rem;">${data.word.replaceAll("_", " ")}</span>`;
+    container.style.flexDirection = "row";
+    container.style.flexWrap = "wrap";
     data.choices.forEach(choice => {
       const el = document.createElement("img");
       el.src = choice.path;
-      // full width on mobile, capped on desktop
-      el.style.cssText = "width:100%;max-width:100%;object-fit:contain;cursor:pointer;border:2px solid transparent;border-radius:8px;display:block;margin-bottom:8px;";
+      el.style.cssText = imgStyle;
       el.onclick = () => button_click('learning', 'answer', choice.correct);
       container.appendChild(el);
     });
 
   } else if (data.mode === "marines_word") {
-    prompt.innerHTML = `<img src="${data.image}" style="width:100%;max-width:100%;object-fit:contain;display:block;">`;
+    prompt.innerHTML = `<img src="${data.image}" style="${imgStyle} cursor:default;">`;
     data.buttons.forEach(btn => {
       const el = document.createElement("button");
       el.textContent = btn.name.replaceAll("_", " ");
-      el.style.cssText = "white-space:normal;word-break:break-word;";
+      el.style.whiteSpace = "normal";
+      el.onclick = () => button_click('learning', 'answer', btn.correct);
+      container.appendChild(el);
+    });
+
+  } else if (data.mode === "marines_odd") {
+    prompt.innerHTML = `<span style="font-size:1.5rem;">Find the one that is <strong>not</strong> in: <em>${data.category}</em></span>`;
+    container.style.flexDirection = "row";
+    container.style.flexWrap = "wrap";
+    data.buttons.forEach(btn => {
+      const wrapper = document.createElement("div");
+      wrapper.style.cssText = "display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;";
+      const el = document.createElement("img");
+      el.src = btn.path;
+      el.style.cssText = imgStyle;
+      const label = document.createElement("span");
+      label.textContent = btn.name.replaceAll("_", " ");
+      label.style.cssText = "font-size:0.75rem;text-align:center;white-space:normal;word-break:break-word;";
+      wrapper.appendChild(el);
+      wrapper.appendChild(label);
+      wrapper.onclick = () => button_click('learning', 'answer', btn.correct);
+      container.appendChild(wrapper);
+    });
+
+  } else if (data.mode === "marines_category") {
+    prompt.innerHTML = `<img src="${data.image}" style="${imgStyle} cursor:default;"><span style="font-size:1rem;margin-top:8px;">${data.name.replaceAll("_", " ")}</span>`;
+    prompt.style.flexDirection = "column";
+    data.buttons.forEach(btn => {
+      const el = document.createElement("button");
+      el.textContent = btn.category.replaceAll("_", " ");
+      el.style.whiteSpace = "normal";
       el.onclick = () => button_click('learning', 'answer', btn.correct);
       container.appendChild(el);
     });
   }
 
-  // bottom: last result
   renderLastWord(data.last_word, data.mode);
 }
 
@@ -325,20 +356,14 @@ function renderLastWord(last, mode) {
   if (mode === "japanese") {
     label.textContent = last.japanese;
     answer.textContent = last.german;
-    answer.style.color = last.correct ? "green" : "red";
-
-  } else if (mode === "marines_image") {
-    // showed the word, player picked an image — show the name as colored text
+  } else if (mode === "marines_category") {
+    label.textContent = last.name;
+    answer.textContent = last.category.replaceAll("_", " ");
+  } else {
     label.textContent = "";
     answer.textContent = last.name.replaceAll("_", " ");
-    answer.style.color = last.correct ? "green" : "red";
-
-  } else if (mode === "marines_word") {
-    // showed the image, player picked a word — show the correct name as colored text
-    label.textContent = "";
-    answer.textContent = last.name.replaceAll("_", " ");
-    answer.style.color = last.correct ? "green" : "red";
   }
+  answer.style.color = last.correct ? "green" : "red";
 }
 
 // ── Stats renderer ────────────────────────────────────────────────
