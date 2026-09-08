@@ -310,21 +310,12 @@ function renderQuestion(data) {
 
   } else if (data.mode === "marines_odd") {
     prompt.innerHTML = `<span style="font-size:1.5rem;">Find the one that is <strong>not</strong> in: <em>${data.category}</em></span>`;
-    container.style.flexDirection = "row";
-    container.style.flexWrap = "wrap";
     data.buttons.forEach(btn => {
-      const wrapper = document.createElement("div");
-      wrapper.style.cssText = "display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;";
-      const el = document.createElement("img");
-      el.src = btn.path;
-      el.style.cssText = imgStyle;
-      const label = document.createElement("span");
-      label.textContent = btn.name.replaceAll("_", " ");
-      label.style.cssText = "font-size:0.75rem;text-align:center;white-space:normal;word-break:break-word;";
-      wrapper.appendChild(el);
-      wrapper.appendChild(label);
-      wrapper.onclick = () => button_click('learning', 'answer', btn.correct);
-      container.appendChild(wrapper);
+      const el = document.createElement("button");
+      el.textContent = btn.name.replaceAll("_", " ");
+      el.style.whiteSpace = "normal";
+      el.onclick = () => button_click('learning', 'answer', btn.correct);
+      container.appendChild(el);
     });
 
   } else if (data.mode === "marines_category") {
