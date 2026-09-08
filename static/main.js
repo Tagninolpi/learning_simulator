@@ -308,7 +308,7 @@ function renderQuestion(data) {
       container.appendChild(el);
     });
 
-  } else if (data.mode === "marines_odd") {
+ } else if (data.mode === "marines_odd") {
     prompt.innerHTML = `<span style="font-size:1.5rem;">Find the one that is <strong>not</strong> in: <em>${data.category}</em></span>`;
     data.buttons.forEach(btn => {
       const el = document.createElement("button");
@@ -317,6 +317,7 @@ function renderQuestion(data) {
       el.onclick = () => button_click('learning', 'answer', btn.correct);
       container.appendChild(el);
     });
+  }
 
   } else if (data.mode === "marines_category") {
     prompt.innerHTML = `<img src="${data.image}" style="${imgStyle} cursor:default;"><span style="font-size:1rem;margin-top:8px;">${data.name.replaceAll("_", " ")}</span>`;
