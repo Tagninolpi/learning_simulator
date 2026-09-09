@@ -155,7 +155,8 @@ class Game:
         # pick a random different category for the companions
         other_cats = [c for c in self.categories if c != odd_cat]
         companion_cat = random.choice(other_cats)
-        companions = list(self.categories[companion_cat])
+        companions = random.sample(self.categories[companion_cat], min(2, len(self.categories[companion_cat])))
+
 
         # shuffle and show all companions + the odd one
         buttons = companions + [odd]
